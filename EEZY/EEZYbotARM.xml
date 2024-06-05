@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+
+<robot>
+    <defines>
+        <!-- motor parameters -->
+        <const name='joint_height' value='0.050' />
+        <const name='joint_radius' value='0.015' />
+
+        <!-- robot parameters -->
+        <const name='base_height' value='0.055' />
+
+        <const name='hip_object_height' value='0.050' />
+        <const name='hip_height' value='0.095' />
+
+        <const name='arms_width' value='0.030' />
+
+        <const name='shoulder_height' value='0.135' />
+
+        <const name='elbow_height' value='0.147' />
+        <const name='elbow_y_offset' value='0.0607369' /> <!-- elbow_height/2 - elbow_height/2 *
+        cos(-80) -->
+        <const name='elbow_z_offset' value='-0.0723834' /> <!-- elbow_height/2 * sin(-80) -->
+
+        <const name='gripper_height' value='0.010' />
+        <const name='gripper_width' value='0.030' />
+        <const name='gripper_length' value='0.120' />
+        <const name='gripper_y_offset' value='0.0255263' /> <!-- cos(80) * elbow_height -->
+        <const name='gripper_z_offset' value='0.1447667' /> <!-- sin(80) * elbow_height -->
+
+    </defines>
+
+    <solids>
+        <cylinder>
+            <ID value='base' />
+            <mass value='10000' />
+            <mesh file='parts/base.stl' scale='1' shadow='1' />
+            <size radius='0.0425' z='base_height' />
+            <pos x='0' y='0' z='base_height/2' />
+            <rot_deg x='0' y='0' z='0' />
+            <color_rgb r='255' g='255' b='255' />
+        </cylinder>
+
+        <cylinder>
+            <ID value='hip' />
+            <mass value='0.1' />
+            <mesh file='parts/hip.stl' scale='1' shadow='1' />
+            <size radius='0.04' z='hip_object_height' />
+            <pos x='0' y='0' z='base_height+hip_object_height/2-0.010' />
+            <rot_deg x='0' y='0' z='90' />
+            <color_rgb r='255' g='255' b='255' />
+        </cylinder>
+
+        <cuboid>
+            <ID value='shoulder' />
+            <mass value='0.1' />
+            <mesh file='parts/shoulder.stl' scale='1' shadow='1' />
+            <size x='arms_width' y='arms_width' z='shoulder_height' />
+            <pos x='0' y='-shoulder_height/2' z='hip_height' />
+            <rot_deg x='90' y='0' z='0' />
+            <color_rgb r='255' g='255' b='255' />
+        </cuboid>
+
+        <cuboid>
+            <ID value='elbow' />
+            <mass value='0.1' />
+            <mesh file='parts/elbow.stl' scale='1' shadow='1' />
+            <size x='arms_width' y='arms_width' z='elbow_height' />
+            <pos x='0' y='-shoulder_height-elbow_height/2 + elbow_y_offset'
+                z='hip_height + elbow_z_offset' />
+            <rot_deg x='170' y='0' z='0' />
+            <color_rgb r='255' g='255' b='255' />
+        </cuboid>
+
+        <cuboid>
+            <ID value='gripper' />
+            <mass value='0.01' />
+            <mesh file='parts/gripper.stl' scale='1' shadow='1' />
+            <size x='gripper_width' y='gripper_length' z='gripper_height' />
+            <pos x='0' y='-shoulder_height-gripper_length/2-gripper_y_offset'
+                z='hip_height-gripper_z_offset' />
+            <rot_deg x='0' y='0' z='0' />
+            <color_rgb r='255' g='255' b='255' />
+        </cuboid>
+    </solids>
+
+    <articulations>
+        <default>
+            <draw radius='0.015' height='0.05' rgb24='8F0000' />
+            <motor ri='0.5' ki='0.3' vmax='24' imax='20' active='1' />
+            <gear ratio='1' />
+            <friction bv='0.05' fc='0.1' />
+            <encoder ppr='1000' mean='0' stdev='0' />
+            <controller mode='pidposition' kp='10' ki='200' kd='0.0' kf='0.0' active='1' period='2' />
+            <spring k='0' zeropos='0' />
+        </default>
+
+        <joint>
+            <ID value='hip_joint' />
+            <pos x='0' y='0' z='joint_height/2' />
+            <axis x='0' y='0' z='1' wrap='1' />
+            <connect B1='hip' B2='world' />
+            <type value='Hinge' />
+        </joint>
+
+        <joint>
+            <ID value='shoulder_joint' />
+            <pos x='0.04' y='0' z='hip_height' />
+            <axis x='1' y='0' z='0' wrap='1' />
+            <connect B1='shoulder' B2='hip' />
+            <type value='Hinge' />
+        </joint>
+
+        <joint>
+            <ID value='elbow_joint' />
+            <pos x='-0.04' y='-shoulder_height' z='hip_height' />
+            <axis x='1' y='0' z='0' wrap='1' />
+            <connect B1='elbow' B2='shoulder' />
+            <type value='Hinge' />
+        </joint>
+
+        <joint>
+            <ID value='gripper_joint' />
+            <pos x='0.04' y='-shoulder_height-gripper_y_offset' z='hip_height-gripper_z_offset' />
+            <axis x='1' y='0' z='0' wrap='1' />
+            <connect B1='gripper' B2='elbow' />
+            <type value='Hinge' />
+        </joint>
+
+        <joint>
+            <pos x='0' y='0' z='joint_height/2' />
+            <axis x='0' y='0' z='1' wrap='1' />
+            <gear ratio='1' />
+            <connect B1='base' B2='world' />
+            <type value='Hinge' />
+        </joint>
+    </articulations>
+
+</robot>

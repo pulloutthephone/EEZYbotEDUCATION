@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<sheet>
+  <columns>
+    <defaultcol width="50" />
+    <col num="1" width="68" />
+    <col num="2" width="61" />
+    <col num="3" width="61" />
+    <col num="4" width="60" />
+    <col num="5" width="57" />
+    <col num="6" width="65" />
+    <col num="7" width="60" />
+    <col num="8" width="56" />
+    <col num="9" width="51" />
+    <col num="12" width="53" />
+  </columns>
+  <cells>
+    <cell r="2" c="1" text="[-X]" />
+    <cell r="2" c="2" text="[+X]" />
+    <cell r="4" c="1" text="[-Z]" backcolor="$FFFFFF" />
+    <cell r="7" c="1" text="[CREATE]" />
+    <cell r="8" c="1" text="Name" backcolor="$00FFFF" />
+    <cell r="8" c="2" text="X" backcolor="$00FFFF" />
+    <cell r="8" c="3" text="Y" backcolor="$00FFFF" />
+    <cell r="7" c="2" text="[SAVE]" backcolor="$FFFFFF" />
+    <cell r="4" c="2" text="[+Z]" backcolor="$FFFFFF" />
+    <cell r="1" c="1" text="step:" />
+    <cell r="1" c="2" text="0.01" />
+    <cell r="2" c="3" text="X:" />
+    <cell r="2" c="4" text="0.146999999881" />
+    <cell r="3" c="1" text="[-Y]" />
+    <cell r="3" c="2" text="[+Y]" />
+    <cell r="3" c="3" text="Y:" />
+    <cell r="3" c="4" text="0.000000000000" />
+    <cell r="4" c="3" text="Z:" />
+    <cell r="4" c="4" text="0.228499993682" />
+    <cell r="8" c="4" text="Z" backcolor="$00FFFF" />
+    <cell r="9" c="2" text="0.119999997318" />
+    <cell r="9" c="3" text="-0.100000001490" />
+    <cell r="9" c="4" text="0.159999996424" />
+    <cell r="10" c="2" text="0.119999997318" />
+    <cell r="10" c="3" text="0.100000001490" />
+    <cell r="10" c="4" text="0.070000000298" />
+    <cell r="11" c="2" text="0.119999997318" />
+    <cell r="11" c="3" text="0.100000001490" />
+    <cell r="11" c="4" text="0.230000004172" />
+    <cell r="12" c="2" text="0.119999997318" />
+    <cell r="12" c="3" text="-0.100000001490" />
+    <cell r="12" c="4" text="0.230000004172" />
+    <cell r="9" c="1" text="p1" />
+    <cell r="10" c="1" text="p2" />
+    <cell r="11" c="1" text="p3" />
+    <cell r="12" c="1" text="p4" />
+    <cell r="2" c="6" text="[MODE]" />
+    <cell r="13" c="2" text="0.170000001788" />
+    <cell r="13" c="3" text="-0.039999999106" />
+    <cell r="13" c="4" text="0.180000007153" />
+    <cell r="13" c="1" text="p_ola" />
+  </cells>
+</sheet>
