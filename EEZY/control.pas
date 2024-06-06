@@ -326,9 +326,9 @@ begin
   if (not RCButtonPressed(2, 6)) then exit;
 
   if (mode = 'automatic') then
-    WriteComPort('manual')
+    WriteComPort('manual,' + FloatToStr(last_pos[0]) + ',' + FloatToStr(last_pos[1]) + ',' + FloatToStr(last_pos[2]))
   else if (mode = 'manual') then
-    WriteComPort('automatic');
+    WriteComPort('automatic,' + FloatToStr(last_pos[0]) + ',' + FloatToStr(last_pos[1]) + ',' + FloatToStr(last_pos[2]));
 end;
 
 {
