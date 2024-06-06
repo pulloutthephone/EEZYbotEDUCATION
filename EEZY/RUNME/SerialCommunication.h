@@ -9,16 +9,14 @@ public:
   void HandleSerialCommunication();
   String GetOperatingMode();
   float* GetRequestedPosition();
-  void SetRobotExecutingState(bool);
 
 private:
   void ReadSerialPort();
   void WriteToSerialPort();
 
-  String mode;
+  String mode, last_mode;
   float robot_requested_position[3];
   long int last_serial_write_time;
-  bool executing_state;
 };
 
 #endif

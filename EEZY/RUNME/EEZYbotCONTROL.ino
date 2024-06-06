@@ -4,15 +4,20 @@
   Released into the public domain.
 */
 
-#define hip_pin 27
+#define hip_pin      27
 #define shoulder_pin 16
-#define elbow_pin 17
-#define gripper_pin 26
+#define elbow_pin    17
+#define gripper_pin  26
 
-const float rad = 0.01745329251;
-const float deg = 57.2957795131;
+const float rad             = 0.01745329251;  // magic number to convert degrees to radians
+const float deg             = 57.2957795131;  // magic number to convert radians to degrees
+const float hip_length      = 0.095;          // length of the hip link
+const float shoulder_length = 0.135;          // length of the elbow link
+const float elbow_length    = 0.147;          // length of the shoulder link
 
-Servo hip, shoulder, elbow;
+Servo hip;
+Servo shoulder;
+Servo elbow;
 
 float last_pos[3];
 
@@ -22,8 +27,7 @@ float last_pos[3];
   Initializes the servos and drives the robot to the home position.
 */
 
-void Start()
-{
+void Start() {
   hip.attach(hip_pin);
   shoulder.attach(shoulder_pin);
   elbow.attach(elbow_pin);
@@ -55,25 +59,31 @@ void Start()
 	The 'pos' array will be populated with the calculated position coordinates.
 */
 
-void FK(const float *ang, float *pos)
-{
-  // length of the links
-  const float d1 = 0.095, d2 = 0.135, d3 = 0.147;
-
-  float t1 = ang[0];
-  float t2 = ang[1];
-  float t3 = ang[2];
+void FK(const float *ang, float *pos) {
+  float hip_angle      = ang[0];
+  float shoulder_angle = ang[1];
+  float elbow_angle    = ang[2];
 
   // adjust gear ratio (reduction)
-  t1 = PI / 2 + ((t1 - PI / 2) / 2);
+  hip_angle = PI / 2 + ((hip_angle - PI / 2) / 2);
 
   // invert rotation of the elbow back to its conventional frame
-  t3 = -t3;
+  elbow_angle = -elbow_angle;
 
   // calculation of the position
-  float x = d3 * cos((4 * PI) / 9 - t3) * cos(PI / 2 - t1) * cos(t2) + d3 * sin((4 * PI) / 9 - t3) * cos(PI / 2 - t1) * sin(t2) + d2 * cos(PI / 2 - t1) * cos(t2);
-  float y = -d3 * sin((4 * PI) / 9 - t3) * sin(PI / 2 - t1) * sin(t2) - d2 * sin(PI / 2 - t1) * cos(t2) - d3 * cos((4 * PI) / 9 - t3) * sin(PI / 2 - t1) * cos(t2);
-  float z = d1 + d2 * sin(t2) + d3 * cos((4 * PI) / 9 - t3) * sin(t2) - d3 * sin((4 * PI) / 9 - t3) * cos(t2);
+  float x = elbow_length * cos((4 * PI) / 9 - elbow_angle) *
+            cos(PI / 2 - hip_angle) * cos(shoulder_angle) +
+            elbow_length * sin((4 * PI) / 9 - elbow_angle) *
+            cos(PI / 2 - hip_angle) * sin(shoulder_angle) +
+          shoulder_length * cos(PI / 2 - hip_angle) * cos(shoulder_angle);
+  float y = -elbow_length * sin((4 * PI) / 9 - elbow_angle) *
+            sin(PI / 2 - hip_angle) * sin(shoulder_angle) -
+            shoulder_length * sin(PI / 2 - hip_angle) * cos(shoulder_angle) -
+            elbow_length * cos((4 * PI) / 9 - elbow_angle) *
+            sin(PI / 2 - hip_angle) * cos(shoulder_angle);
+  float z = hip_length + shoulder_length * sin(shoulder_angle) +
+            elbow_length * cos((4 * PI) / 9 - elbow_angle) * sin(shoulder_angle) -
+            elbow_length * sin((4 * PI) / 9 - elbow_angle) * cos(shoulder_angle);
 
   // save the positions
   pos[0] = x, pos[1] = y, pos[2] = z;
@@ -92,28 +102,28 @@ void FK(const float *ang, float *pos)
 	The 'ang' array will be populated with the calculated joint angles.
 */
 
-void IK(const float *pos, float *ang)
-{
-  // length of the links
-  const float d1 = 0.095, d2 = 0.135, d3 = 0.147;
-
+void IK(const float *pos, float *ang) {
   float x = pos[0];
   float y = pos[1];
   float z = pos[2];
 
   // calculation of the angles
-  float t1 = atan2(y, x);
-  float t3 = -acos((x * x + y * y + (z - d1) * (z - d1) - d2 * d2 - d3 * d3) / (2 * d2 * d3));
-  float t2 = atan2((z - d1), (sqrt(x * x + y * y))) - atan2((sin(t3) * d3), (d2 + cos(t3) * d3));
+  float hip_angle      = atan2(y, x);
+  float elbow_angle    = -acos((x * x + y * y + (z - hip_length) * (z - hip_length) -
+                         shoulder_length * shoulder_length - elbow_length * elbow_length) /
+                         (2 * shoulder_length * elbow_length));
+  float shoulder_angle = atan2((z - hip_length), (sqrt(x * x + y * y))) -
+                         atan2((sin(elbow_angle) * elbow_length),
+                         (shoulder_length + cos(elbow_angle) * elbow_length));
 
-  t1 = t1 + PI / 2;             // offset of the hip servo
-  t3 = (t3 + 4 * PI / 9) * -1;  // offset of the elbow servo and rotation of the frame (the servo rotates counter-clockwise in this frame)
+  hip_angle   = hip_angle + PI / 2;               // offset of the hip servo
+  elbow_angle = (elbow_angle + 4 * PI / 9) * -1;  // offset of the elbow servo and rotation of the frame (the servo rotates counter-clockwise in this frame)
 
   // adjust gear ratio (multiplication)
-  t1 = PI / 2 + ((t1 - PI / 2) * 2);
+  hip_angle = PI / 2 + ((hip_angle - PI / 2) * 2);
 
   // save the angles
-  ang[0] = t1, ang[1] = t2, ang[2] = t3;
+  ang[0] = hip_angle, ang[1] = shoulder_angle, ang[2] = elbow_angle;
 }
 
 /*
@@ -132,29 +142,26 @@ void IK(const float *pos, float *ang)
 	Two-dimensional array with the interpolated positions between the current position and the wanted position.
 */
 
-float **LinearInterpolation(const float *current_pos, const float *wanted_pos, float velocity, int *num_steps, float *time_step)
-{
+float **LinearInterpolation(const float *current_pos, const float *wanted_pos, float velocity, int *num_steps, float *time_step) {
   // calculate the total distance each servo needs to move
-  const float dx = wanted_pos[0] - current_pos[0];           // calculate the distance in the 'x' direction
-  const float dy = wanted_pos[1] - current_pos[1];           // calculate the distance in the 'y' direction
-  const float dz = wanted_pos[2] - current_pos[2];           // calculate the distance in the 'z' direction
-  const float distance = sqrt(dx * dx + dy * dy + dz * dz);  // calculate the total distance
+  const float resolution = 0.001;                              // resolution of the step
+  const float dx         = wanted_pos[0] - current_pos[0];     // calculation of the distance in the 'x' direction
+  const float dy         = wanted_pos[1] - current_pos[1];     // calculation of the distance in the 'y' direction
+  const float dz         = wanted_pos[2] - current_pos[2];     // calculation of the distance in the 'z' direction
+  const float distance   = sqrt(dx * dx + dy * dy + dz * dz);  // calculation of the total distance
 
-  const float resolution = 0.001;                                            // resolution of the step
-  velocity = (velocity > resolution / 0.02) ? resolution / 0.02 : velocity;  // limits the velocity
-  *num_steps = ceil(distance / resolution);                                  // calculation of number of steps
-  *time_step = (distance / velocity) / *num_steps;                           // calculate the time for each step
+  velocity   = (velocity > resolution / 0.02) ? resolution / 0.02 : velocity;  // limits the velocity
+  *num_steps = ceil(distance / resolution);                                    // calculation of number of steps
+  *time_step = (distance / velocity) / *num_steps;                             // calculation of the time for each step
 
   // allocate 2D array to save the interpolated points
   float **lerp_matrix = (float **)malloc(*num_steps * sizeof(float *));
-  for (int i = 0; i < *num_steps; i++)
-  {
+  for (int i = 0; i < *num_steps; i++) {
     lerp_matrix[i] = (float *)malloc(3 * sizeof(float));
   }
 
   // calculate the interpolated points
-  for (int i = 0; i < *num_steps; i++)
-  {
+  for (int i = 0; i < *num_steps; i++) {
     const float t = distance * (i + 1) / *num_steps;
     lerp_matrix[i][0] = current_pos[0] + (t / distance) * dx;
     lerp_matrix[i][1] = current_pos[1] + (t / distance) * dy;
@@ -180,28 +187,26 @@ float **LinearInterpolation(const float *current_pos, const float *wanted_pos, f
 	Two-dimensional array with the interpolated positions between the current position and the wanted position.
 */
 
-float **JointInterpolation(const float *current_pos, const float *wanted_pos, float velocity, int *num_steps, float *time_step)
-{
+float **JointInterpolation(const float *current_pos, const float *wanted_pos, float velocity, int *num_steps, float *time_step) {
   float current_ang[3], wanted_ang[3];
 
   IK(current_pos, current_ang);
   IK(wanted_pos, wanted_ang);
 
   // calculate the total distance each servo needs to move
-  const float dx = wanted_pos[0] - current_pos[0];           // calculate the distance in the 'x' direction
-  const float dy = wanted_pos[1] - current_pos[1];           // calculate the distance in the 'y' direction
-  const float dz = wanted_pos[2] - current_pos[2];           // calculate the distance in the 'z' direction
-  const float distance = sqrt(dx * dx + dy * dy + dz * dz);  // calculate the total distance
+  const float resolution = 0.001;                              // resolution of the step
+  const float dx         = wanted_pos[0] - current_pos[0];     // calculation of the distance in the 'x' direction
+  const float dy         = wanted_pos[1] - current_pos[1];     // calculation of the distance in the 'y' direction
+  const float dz         = wanted_pos[2] - current_pos[2];     // calculation of the distance in the 'z' direction
+  const float distance   = sqrt(dx * dx + dy * dy + dz * dz);  // calculation of the total distance
 
-  const float resolution = 0.001;                                            // resolution of the step
-  velocity = (velocity > resolution / 0.02) ? resolution / 0.02 : velocity;  // limits the velocity
-  *num_steps = ceil(distance / resolution);                                  // calculation of number of steps
-  *time_step = (distance / velocity) / *num_steps;                           // calculate the time for each step
+  velocity   = (velocity > resolution / 0.02) ? resolution / 0.02 : velocity;  // limits the velocity
+  *num_steps = ceil(distance / resolution);                                    // calculation of number of steps
+  *time_step = (distance / velocity) / *num_steps;                             // calculation of the time for each step
 
   // allocate 2D array to save the interpolated points
   float **joint_matrix = (float **)malloc(*num_steps * sizeof(float *));
-  for (int i = 0; i < *num_steps; i++)
-  {
+  for (int i = 0; i < *num_steps; i++) {
     joint_matrix[i] = (float *)malloc(3 * sizeof(float));
   }
 
@@ -212,8 +217,7 @@ float **JointInterpolation(const float *current_pos, const float *wanted_pos, fl
   delta_ang[2] = (wanted_ang[2] - current_ang[2]) / *num_steps;
 
   // update current angles and populate joint_matrix
-  for (int i = 0; i < *num_steps; i++)
-  {
+  for (int i = 0; i < *num_steps; i++) {
     joint_matrix[i][0] = current_ang[0] + delta_ang[0] * (i + 1);
     joint_matrix[i][1] = current_ang[1] + delta_ang[1] * (i + 1);
     joint_matrix[i][2] = current_ang[2] + delta_ang[2] * (i + 1);
@@ -232,11 +236,9 @@ float **JointInterpolation(const float *current_pos, const float *wanted_pos, fl
 	velocity:   The velocity at which the robot moves to complete the trajectory.
 */
 
-void MoveL(const float *pos, const float velocity)
-{
+void MoveL(const float *pos, const float velocity) {
   float *current_pos = nullptr;
-  if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE)
-  {
+  if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
     current_pos = GetLastPosition();
     xSemaphoreGive(last_pos_mutex);
   }
@@ -245,11 +247,10 @@ void MoveL(const float *pos, const float velocity)
   // linearly interpolate between the current position and the wanted position
   int num_steps;                                                                                         // value of the number of steps
   float time_step;                                                                                       // value of the time between each step
-  float **lerp_matrix = LinearInterpolation(current_pos, wanted_pos, velocity, &num_steps, &time_step);  // calculate the interpolated positions
+  float **lerp_matrix = LinearInterpolation(current_pos, wanted_pos, velocity, &num_steps, &time_step);  // calculation of the interpolated positions
 
   // calculate the inverse kinematics of each position and write to the servo motors
-  for (int i = 0; i < num_steps; i++)
-  {
+  for (int i = 0; i < num_steps; i++) {
     // calculate the inverse kinematics
     float lerp_angles[3];
     IK(lerp_matrix[i], lerp_angles);
@@ -257,8 +258,7 @@ void MoveL(const float *pos, const float velocity)
     WriteToPhysicalMotors(lerp_angles);
 
     // save last position
-    if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE)
-    {
+    if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
       SetLastPosition(lerp_matrix[i]);
       xSemaphoreGive(last_pos_mutex);
     }
@@ -267,8 +267,7 @@ void MoveL(const float *pos, const float velocity)
   }
 
   // free memory of 2D array
-  for (int i = 0; i < num_steps; i++)
-  {
+  for (int i = 0; i < num_steps; i++) {
     free(lerp_matrix[i]);
   }
   free(lerp_matrix);
@@ -284,11 +283,9 @@ void MoveL(const float *pos, const float velocity)
 	velocity:   The velocity at which the robot moves to complete the trajectory.
 */
 
-void MoveJ(const float *pos, const float velocity)
-{
+void MoveJ(const float *pos, const float velocity) {
   float *current_pos = nullptr;
-  if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE)
-  {
+  if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
     current_pos = GetLastPosition();
     xSemaphoreGive(last_pos_mutex);
   }
@@ -301,16 +298,14 @@ void MoveJ(const float *pos, const float velocity)
   float **joint_matrix = JointInterpolation(current_pos, wanted_pos, velocity, &num_steps, &time_step);  // calculate the interpolated positions
 
   // incrementally move each servo to its wanted position
-  for (int i = 0; i < num_steps; i++)
-  {
+  for (int i = 0; i < num_steps; i++) {
     WriteToPhysicalMotors(new float[3]{ joint_matrix[i][0], joint_matrix[i][1], joint_matrix[i][2] });
 
     // save updated position
     float updated_pos[3];
     FK(joint_matrix[i], updated_pos);
 
-    if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE)
-    {
+    if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
       SetLastPosition(updated_pos);
       xSemaphoreGive(last_pos_mutex);
     }
@@ -319,8 +314,7 @@ void MoveJ(const float *pos, const float velocity)
   }
 
   // free memory of 2D array
-  for (int i = 0; i < num_steps; i++)
-  {
+  for (int i = 0; i < num_steps; i++) {
     free(joint_matrix[i]);
   }
   free(joint_matrix);
@@ -335,8 +329,7 @@ void MoveJ(const float *pos, const float velocity)
 	ang:   Array containing the joint angles in radians.
 */
 
-void WriteToPhysicalMotors(const float *ang)
-{
+void WriteToPhysicalMotors(const float *ang) {
   hip.write(ang[0] * deg);
   shoulder.write(ang[1] * deg);
   elbow.write(ang[2] * deg + 90 - ang[1] * deg);
@@ -351,8 +344,7 @@ void WriteToPhysicalMotors(const float *ang)
 	state:   Boolean value indicating whether to open (true) or close (false) the gripper.
 */
 
-void ToggleGripper(const bool state)
-{
+void ToggleGripper(const bool state) {
   digitalWrite(gripper_pin, state);
 }
 
@@ -365,8 +357,7 @@ void ToggleGripper(const bool state)
 	time:   The duration to wait in seconds.
 */
 
-void WaitTime(const int time)
-{
+void WaitTime(const int time) {
   delay(time * 1000);
 }
 
@@ -376,13 +367,11 @@ void WaitTime(const int time)
   Update the robot position based.
 */
 
-void UpdateRobotPosition(const float *pos)
-{
+void UpdateRobotPosition(const float *pos) {
   float ang[3];
   IK(pos, ang);
   WriteToPhysicalMotors(ang);
-  if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE)
-  {
+  if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
     SetLastPosition(pos);
     xSemaphoreGive(last_pos_mutex);
   }
@@ -397,8 +386,7 @@ void UpdateRobotPosition(const float *pos)
 	pos:   Array containing the last position of the end effector.
 */
 
-void SetLastPosition(const float *pos)
-{
+void SetLastPosition(const float *pos) {
   last_pos[0] = pos[0];
   last_pos[1] = pos[1];
   last_pos[2] = pos[2];
@@ -413,7 +401,6 @@ void SetLastPosition(const float *pos)
 	Array containing the last position of the end effector.
 */
 
-float *GetLastPosition()
-{
+float *GetLastPosition() {
   return last_pos;
 }
