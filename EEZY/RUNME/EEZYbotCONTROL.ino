@@ -75,7 +75,7 @@ void FK(const float *ang, float *pos) {
             cos(PI / 2 - hip_angle) * cos(shoulder_angle) +
             elbow_length * sin((4 * PI) / 9 - elbow_angle) *
             cos(PI / 2 - hip_angle) * sin(shoulder_angle) +
-          shoulder_length * cos(PI / 2 - hip_angle) * cos(shoulder_angle);
+            shoulder_length * cos(PI / 2 - hip_angle) * cos(shoulder_angle);
   float y = -elbow_length * sin((4 * PI) / 9 - elbow_angle) *
             sin(PI / 2 - hip_angle) * sin(shoulder_angle) -
             shoulder_length * sin(PI / 2 - hip_angle) * cos(shoulder_angle) -
@@ -162,7 +162,7 @@ float **LinearInterpolation(const float *current_pos, const float *wanted_pos, f
 
   // calculate the interpolated points
   for (int i = 0; i < *num_steps; i++) {
-    const float t = distance * (i + 1) / *num_steps;
+    const float t     = distance * (i + 1) / *num_steps;
     lerp_matrix[i][0] = current_pos[0] + (t / distance) * dx;
     lerp_matrix[i][1] = current_pos[1] + (t / distance) * dy;
     lerp_matrix[i][2] = current_pos[2] + (t / distance) * dz;

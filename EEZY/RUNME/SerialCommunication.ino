@@ -30,7 +30,7 @@ void SerialCommunication::ReadSerialPort() {
     String packet = Serial.readStringUntil('\n');
 
     // extract mode from the packet
-    int comma_index      = packet.indexOf(',');
+    int    comma_index   = packet.indexOf(',');
     String incoming_mode = packet.substring(0, comma_index);
     packet.remove(0, comma_index + 1);
 
@@ -79,7 +79,7 @@ void SerialCommunication::ReadSerialPort() {
 void SerialCommunication::WriteToSerialPort() {
     String current_mode;
     float *robot_last_position;
-    bool current_state;
+    bool   current_state;
 
     if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
         robot_last_position = GetLastPosition();
