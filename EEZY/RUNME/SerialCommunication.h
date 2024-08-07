@@ -3,12 +3,13 @@
 
 #include "EEZYbotCONTROL.h"
 
-class SerialCommunication {
+class SerialCommunication
+{
 public:
   SerialCommunication();
   void HandleSerialCommunication();
   String GetOperatingMode();
-  float* GetRequestedPosition();
+  float *GetRequestedPosition();
 
 private:
   void ReadSerialPort();

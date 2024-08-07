@@ -10,7 +10,8 @@ SemaphoreHandle_t operating_mode_mutex;
 
 SerialCommunication communication;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   // disable watchdog
@@ -29,7 +30,7 @@ void setup() {
     NULL,                             // parameter of the task
     1,                                // priority of the task
     &SerialCommunicationTaskHandle,   // task handle to keep track of created task
-    1);                               // pin task to core 1
+    1);                               // core pinned task
 
   // create the task for the robot control
   xTaskCreatePinnedToCore(
@@ -39,26 +40,29 @@ void setup() {
     NULL,                             // parameter of the task
     2,                                // priority of the task
     &RobotControlTaskHandle,          // task handle to keep track of created task
-    1);                               // pin task to core 1
+    1);                               // core pinned task
 }
 
-void loop() {
-}
+void loop() {}
 
-void RobotTask(void *pvParameters) {
+void RobotTask(void *pvParameters)
+{
   Start();
-  for (;;) {
+  for (;;)
+  {
     String operating_mode;
-    if (xSemaphoreTake(operating_mode_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(operating_mode_mutex, portMAX_DELAY) == pdTRUE)
+    {
       operating_mode = communication.GetOperatingMode();
       xSemaphoreGive(operating_mode_mutex);
     }
 
-    if (operating_mode.equals("automatic")) {
-      MAIN();
-    } else if (operating_mode.equals("manual")) {
+    if      (operating_mode.equals("automatic")) MAIN();
+    else if (operating_mode.equals("manual"))
+    {
       float *pos = nullptr;
-      if (xSemaphoreTake(requested_pos_mutex, portMAX_DELAY) == pdTRUE) {
+      if (xSemaphoreTake(requested_pos_mutex, portMAX_DELAY) == pdTRUE)
+      {
         pos = communication.GetRequestedPosition();
         xSemaphoreGive(requested_pos_mutex);
       }
@@ -67,8 +71,7 @@ void RobotTask(void *pvParameters) {
   }
 }
 
-void CommunicationTask(void *pvParameters) {
-  for (;;) {
-    communication.HandleSerialCommunication();
-  }
+void CommunicationTask(void *pvParameters)
+{
+  for (;;) communication.HandleSerialCommunication();
 }

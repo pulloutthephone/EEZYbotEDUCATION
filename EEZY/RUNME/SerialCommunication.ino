@@ -1,29 +1,35 @@
 #include "SerialCommunication.h"
 
-SerialCommunication::SerialCommunication() {
+SerialCommunication::SerialCommunication()
+{
     mode                   = "automatic"; // initialize robot working mode
     last_serial_write_time = millis();    // start the writing timer for serial communication
 }
 
-String SerialCommunication::GetOperatingMode() {
+String SerialCommunication::GetOperatingMode()
+{
     return mode;
 }
 
-float *SerialCommunication::GetRequestedPosition() {
+float *SerialCommunication::GetRequestedPosition()
+{
     return robot_requested_position;
 }
 
-void SerialCommunication::HandleSerialCommunication() {
+void SerialCommunication::HandleSerialCommunication()
+{
     ReadSerialPort();
 
     // send packets every 30 ms
-    if (millis() - last_serial_write_time >= 30) {
+    if (millis() - last_serial_write_time >= 30)
+    {
         last_serial_write_time = millis();
         WriteToSerialPort();
     }
 }
 
-void SerialCommunication::ReadSerialPort() {
+void SerialCommunication::ReadSerialPort()
+{
     if (Serial.available() <= 0) return;
 
     // read the incoming packet
@@ -38,26 +44,28 @@ void SerialCommunication::ReadSerialPort() {
     float temp_requested_position[3];
 
     // save requested position
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         comma_index                = packet.indexOf(',');
         temp_requested_position[i] = packet.substring(0, comma_index).toFloat();
         packet.remove(0, comma_index + 1);
     }
 
     // acquire mutex to update requested position
-    if (xSemaphoreTake(requested_pos_mutex, portMAX_DELAY) == pdTRUE) {
-        for (int i = 0; i < 3; ++i) {
-            robot_requested_position[i] = temp_requested_position[i];
-        }
+    if (xSemaphoreTake(requested_pos_mutex, portMAX_DELAY) == pdTRUE)
+    {
+        for (int i = 0; i < 3; ++i) robot_requested_position[i] = temp_requested_position[i];
         xSemaphoreGive(requested_pos_mutex);
     }
 
     // acquire mutex to update operating mode
-    if (xSemaphoreTake(operating_mode_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(operating_mode_mutex, portMAX_DELAY) == pdTRUE)
+    {
         mode = incoming_mode;
 
         // reset robot task if manual mode has been requested
-        if (!mode.equals(last_mode) && mode.equals("manual")) {
+        if (!mode.equals(last_mode) && mode.equals("manual"))
+        {
             vTaskDelete(RobotControlTaskHandle);
 
             xTaskCreatePinnedToCore(
@@ -76,17 +84,20 @@ void SerialCommunication::ReadSerialPort() {
     }
 }
 
-void SerialCommunication::WriteToSerialPort() {
+void SerialCommunication::WriteToSerialPort()
+{
     String current_mode;
     float *robot_last_position;
     bool   current_state;
 
-    if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(last_pos_mutex, portMAX_DELAY) == pdTRUE)
+    {
         robot_last_position = GetLastPosition();
         xSemaphoreGive(last_pos_mutex);
     }
 
-    if (xSemaphoreTake(operating_mode_mutex, portMAX_DELAY) == pdTRUE) {
+    if (xSemaphoreTake(operating_mode_mutex, portMAX_DELAY) == pdTRUE)
+    {
         current_mode = mode;
         xSemaphoreGive(operating_mode_mutex);
     }
